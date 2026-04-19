@@ -4,7 +4,7 @@ This is not a guide. It is the documentation of my journey converting a broken P
 A proper guide will likely follow once everything is fully stable and reproducible.
 
 
-## Overview
+## Table of Contents
 - [0. Hardware State](#0-hardware-state)
 - [1. Initial Access (UI Control)](#1-initial-access-ui-control)
 - [2. Enable Debugging](#2-enable-debugging)
