@@ -1,14 +1,15 @@
 # 📱 Pixel 9 → Headless Linux Server
 
-This is not a guide. It is the documentation of my journey converting a broken Pixel 9 into a headless Linux server.  
-A proper guide will likely follow once everything is fully stable and reproducible.
+> [!IMPORTANT]
+> This is not a guide. It is the documentation of my journey converting a broken Pixel 9 into a headless Linux server.  
+> A proper guide will likely follow once everything is fully stable and reproducible.
 
-
-## Table of Contents
+<details>
+<summary>## Table of Contents</summary>
 - [0. Hardware State](#0-hardware-state)
 - [1. Initial Access (UI Control)](#1-initial-access-ui-control)
 - [2. Enable Debugging](#2-enable-debugging)
-- [3. scrcpy Access](#3-scrcpy-access)
+- [3. Granting ADB Access](#3-granting-adb-access)
 - [4. Check Functionality](#4-check-functionality)
 - [5. Removing the broken Screen](#5-removing-the-broken-screen)
 - [6. Debug Battery "Replacement"](#6-debug-battery-replacement)
@@ -26,11 +27,12 @@ A proper guide will likely follow once everything is fully stable and reproducib
 - [18. Debian RootFS](#18-debian-rootfs)
 - [19. Mount + Chroot RootFS](#19-mount--chroot-rootfs)
 - [Future Work](#future-work)
+</details>
 
 ## Situation
 
 The phone fell out of a pocket and landed face down on a parking lot during a rainy day. It had been lying there for a couple of hours before it was found again. By that point, the damage was already clearly visible.  
-On top of the physical damage, the device is also enrolled in Family Link, which introduces an additional layer of restrictions that limits access to system settings and developer features.
+On top of the physical damage, the device was also enrolled in Family Link, which introduced an additional layer of restrictions that limit access to system settings and developer features.
 
 
 ## 0. Hardware State
@@ -42,13 +44,13 @@ The screen is completely unusable. There is no touch input and no visible image 
 ![shattered_screen](./res/img/shattered_screen.jpg)
 ![shattered_screen](./res/img/broken_screen.jpg)
 
-The rear glass, however, is still intact, which is honestly surprising given the condition of the front. The device itself still appears to operate normally. A short press of the power button turns the display on and off, which strongly suggests that the phone is sitting in the normal lock screen state rather than being fully unresponsive.  
-A long press on the power button triggers a brief vibration, which likely indicates that the system is still responsive enough to bring up either the power menu or a voice assistant like Gemini. Even without a usable display, this small interaction is enough to confirm that the underlying system seems so be still running and reacting normally to input.
+The rear glass, however, is still intact, which is honestly surprising given the condition of the front. The device itself still appears to operate normally. A short press of the power button turned the display on and off, which strongly suggested that the phone was sitting in the normal lock screen state rather than being fully unresponsive.  
+A long press on the power button triggered a brief vibration, which likely indicated that the system was still responsive enough to bring up either the power menu or a voice assistant like Gemini. Even without a usable display, this small interaction was enough to confirm that the underlying system seemed to be still running and reacting normally to input.
 
 ---
 
 Although my current phone is still functional, it is already getting old. My initial thought was therefore fairly simple: replace the broken screen and continue using the Pixel 9. iFixit even provides official replacement parts, which made this option seem realistic at first.  
-However, the more I thought about it, the less straightforward it became. The repair is still relatively expensive for a device I do not strictly need, and the frame at the front appears to be unfavorable dented in places. This raised the concern that even after replacing the display, additional mechanical work such as sanding the frame might be required to make everything fit properly again.
+However, the more I thought about it, the less straightforward it became. The repair is still relatively expensive for a device I do not strictly need, and the frame at the front appears to be unfavorably dented in some places. This raised the concern that even after replacing the display, additional mechanical work such as sanding the frame might be required to make everything fit properly again.
 
 At that point, I was genuinely undecided about what to do with the device—assuming the internal hardware was even still fully intact.
 
@@ -57,7 +59,7 @@ At that point, I was genuinely undecided about what to do with the device—assu
 
 <!-- ### Goal -->
 
-The first step is to determine whether the device was still functionally usable at all. In particular, I needed to know if the system was still responsive—whether apps could launch and basic navigation still worked.
+The first step was to determine whether the device was still functionally usable at all. In particular, I needed to know if the system was still responsive—whether apps could launch and basic navigation still worked.
 
 <!-- ### Idea -->
 
@@ -67,26 +69,26 @@ Since the Pixel 9 supports display output via USB-C, the idea was to bypass the 
 <!-- ### Method -->
 
 I borrowed a USB-C hub and checked with a friend who owns the same phone to understand the exact steps required to get external display output working.  
-The setup itself is straightforward: HDMI was connected to a monitor, and USB devices such as a mouse and keyboard were plugged into the hub. Once connected, input via mouse and keyboard worked immediately - wakig up the the "screen" worked on a button press.  
-However, display output is not automatically enabled and needs to be confirmed on the device itself — specifically after unlocking it.
+The setup itself is straightforward: HDMI was connected to a monitor, and USB devices such as a mouse and keyboard were plugged into the hub. Once connected, input via mouse and keyboard worked immediately—waking up the the "screen" worked on a button press.  
+However, display output is not automatically enabled and needs to be confirmed on the device itself—after unlocking it.
 
 <!-- ### Unlocking the Device and Enabling Output -->
 
 Since the screen was unusable, everything had to be done blindly using the external input devices.  
-I started by simulating the usual unlock gesture with the mouse (a swipe up) to bring up the PIN entry field. After entering the PIN and confirming with `Enter`, the device unlocked successfully - at least it should be.  
-To enable display output, I navigated the UI using the keyboard. By repeatedly pressing the right arrow key (`→`) and confirming with `Enter`. After a few attempts I found a method that was quite reliablely accepting the prompt that enables external display output:  
+I started by simulating the usual unlock gesture with the mouse (a swipe up) to bring up the PIN entry field. After entering the PIN and confirming with `Enter`, the device was unlocked successfully—at least it should be.  
+To enable display output, I navigated the popup UI using the keyboard by pressing the right arrow key (`→`) and confirming with `Enter`. After a few attempts I found a method that was quite reliably accepting the prompt that enables external display output:  
 - Spamming the arrow key a few times to ensure that the correct button was focused.
 
 <!-- ### Nice to Have -->
 
-At this point, of the first quality-of-life improvements was to remove the lock screen PIN entirely. Since all interaction depends on somewhat fragile input assumptions, reducing the number of required steps and therefore possible failure points greatly simplifies further work.
+At this point, the first quality-of-life improvement was to remove the lock screen PIN entirely. Since all interactions depend on somewhat fragile input assumptions, reducing the number of required steps and therefore possible failure points greatly simplified further work.
 
 
 ## 2. Enable Debugging
 
 <!-- ### Goal -->
 
-After getting basic UI access through the USB-C hub, the next step was to simplify the setup.  
+After getting basic UI access through the USB-C hub, the next step was to reduce the setup.  
 While the hub approach worked, it was clearly not something I wanted to rely on long term. So my plan was to reduce everything down to a single, stable connection to a host PC.  
 There is a tool called [scrcpy](https://github.com/genymobile/scrcpy) that allows controlling and mirroring an Android device via USB debugging.  
 If this works, it would replace the entire hub setup with just one cable: plug the phone into a computer and immediately get full control over the device.
@@ -98,7 +100,7 @@ If this works, it would replace the entire hub setup with just one cable: plug t
 Enabling USB debugging requires access to the developer options.  
 However, because the device is managed via Family Link, these settings are blocked by default.  
 So even though the phone itself is working, some of the most useful low-level features are locked behind parental controls.  
-It is possible to enable developer options from the parent device.  
+Luckily, it is possible to unlock developer options from the parent device.  
 This lifts the restriction in principle, but it does not fully solve the problem—you still need to go into the settings on the phone itself and enable the required options manually.
 
 Which, again, has to be done blindly or through the somewhat annoying external display setup.
@@ -111,30 +113,28 @@ Once inside the developer options, the relevant settings are:
 - **USB debugging**, which allows ADB access from a host PC  
 - **“Never revoke authorizations”** or **“Disable adb authorization timeout”** - whatever is was called again- , which prevents trusted devices from being removed after a few days of inactivity  
 
-The second option turned out to be especially important.  
+The second option turned out to be important as well.  
 Since access to the device depends on a working connection and some luck with input. Having to re-authorize a PC every few days would introduce another unnecessary point of failure.
 
+## 3. Granting ADB Access
 
-## 3. scrcpy Access
+The first problem when trying to use [scrcpy](https://github.com/genymobile/scrcpy) is the ADB authorization dialog. 
+This prompt has to be confirmed manually on the phone itself, which immediately becomes kind of impossible when the screen is unusable with only pixel noise in a some areas that got smaller with each day.  
+Then the second complication is a direct consequence of the first one: the USB hub allows input only while it is connected. But this creates the unfortunate situation, that I need the connection to the hub while I want the wired debugging connection to the host PC.
 
-The first problem when trying to use `scrcpy` is the ADB authorization dialog. 
-This prompt has to be confirmed manually on the phone itself, which immediately becomes kind of impossible when the screen is unusable with only pixel noise in a some areas that get smaller with each day.  
-Then the second complication is a direct consequence of the first one: while the USB hub is connected it allows input. But this creates the unfortunate situation, that I need the connection to the hub while i want the wired debugging connection to the host PC.
-
-The workaround was to temporarily reconnect the USB-C hub setup and pair a wireless input device, such as a Bluetooth keyboard or game controller. This allowed me to keep input capability even when the hub was not actively connected.
+The workaround was to temporarily reconnect the USB-C hub setup and pair a wireless input device, such as a Bluetooth keyboard or game controller. This allowed me to keep input capability even when the hub was not plugged in.
 With this setup, I reconnected the phone to the host PC and attempted to approve the ADB authorization prompt. The goal was to enable the “Always allow from this computer” option so that the device would permanently trust the machine and not require repeated confirmation.
-Here, I do not fully remember the exact key sequence anymore. The most likely approach was navigating with the arrow keys, check the "Alway allow" box with `Enter`, followed by the proven method of spamming right and confirming with `Enter`. 
+Here, I do not fully remember the exact key sequence anymore. The most likely approach was navigating with the arrow keys, check the "Always allow" box with `Enter`, followed by the proven method of spamming `→` and confirming with `Enter`. 
 After completing this step, the connection could be verified on the PC side using:
 
 ```bash
 adb devices
 ```
 
-Once the device appeared correctly in the list, you can reconnect the phone and hope for the best that you hit the “Always allow” button.
+Once the device appears correctly in the list, you can reconnect the phone and hope for the best that you hit the “Always allow” button.
 
-### Note
-
-I also tried using wireless debugging, but it was not stable in practice. Each time it had to be re-enabled, and both the port and pairing PIN would change on every session, which made it unreliable for a persistent setup.
+> [!Note]
+> I also tried using wireless debugging, but it was not stable in practice. Each time it had to be re-enabled, and both the port and pairing PIN would change on > every session, which made it unusable for a persistent setup.
 
 
 
@@ -145,12 +145,12 @@ I also tried using wireless debugging, but it was not stable in practice. Each t
 To verify that the hardware was still in a usable state, Google provides a built-in diagnostic tool by calling:  
 `*#*#7287#*#*`  
 From there, I ran a full set of hardware tests.  
-In my case, everything appeared to be functioning normally except for the rear microphone, which seemed to be the only component showing abnormal behavior, effectively recording silence.
+In my case, everything appeared to be functioning normally except for the rear microphone which was effectively recording silence.
 
 ### General Check
 
-Beyond the formal diagnostics, I also spent some time testing the phone in a more practical way —checking responsiveness, connectivity, and whether anything else behaved unexpectedly.  
-At this stage, the device still behaved essentially like a normal phone —except for the part with the screen—, so overall, it did not seem to have any further serious hardware damage.
+Beyond the formal diagnostics, I also spent some time testing the phone in a more practical way—checking responsiveness, connectivity, and whether anything else behaved unexpectedly.  
+At this stage, the device still behaved essentially like a normal phone—except for the part with the screen. So overall, it did not seem to have any further serious hardware damage.
 
 
 ## 5. Removing the Broken Screen
@@ -168,11 +168,11 @@ The more concerning part was that directly behind that area sits the battery. Se
 
 ### Inspecting the Battery
 
-Removing the rear glass itself was relatively easys but still took a long time, as i do not take apart phones on a daily basis. Once inside, after removign a large metal conver and the NFC coil, at first glance everything seemed to be in a good contition. So, moving on to the battery...  
-Removing the battery itself took WAAAAAAY longer than expected. This single large pull tab is just a joke—even with generous use of isopropanol. Instead of cleanly releasing, it became a slow and somewhat frustrating process of using the tab almost like a saw to "cut" the glue —or better, to soften it into a sticky, pasty mess— step by step, with isopropanol, over the course of a couple of hours.
+Removing the rear glass itself was relatively easys but still took a long time, as i do not take apart phones on a daily basis. Once inside, after removing a large metal conver and the NFC coil, at first glance everything seemed to be in a good contition. So, moving on to the battery...  
+Removing the battery itself took WAAAAAAY longer than expected. This single large pull tab is just a joke—even with generous use of isopropanol. Instead of cleanly releasing, it became a slow and somewhat frustrating process of using the tab almost like a saw to "cut" the glue—or better, to soften it into a sticky, pasty mess—step by step, with isopropanol, over the course of a couple of hours.
 
 Eventually, the battery did come out, but the result was not very encouraging.
-It showed visible dents, which makes it difficult to trust for any kind of long-term use. Even if it still technically functions, it is no longer something I would feel comfortable relying on in a rebuilt device.
+It showed visible dents, which made it difficult to trust for any kind of long-term use. Even if it still technically functions, it is no longer something I would feel comfortable relying on in a reassembled device.
 
 
 ### Conclusion
@@ -189,7 +189,7 @@ Otherwise this text probably would not exist for you to read.
 
 ## 6. Debug Battery "Replacement"
 
-At this point, two related problems became apparent. The first is that the phone expects a battery—or more precisely, a functioning battery management system—to be present in order to boot, even into the bootloader (Fastboot).  
+At this point, two related problems became apparent. The first one was that the phone requires a battery—or more precisely, a functioning battery management system—to be present in order to boot, even into the bootloader (Fastboot).  
 Second, a BMS alone is not sufficient for the phone to boot into Android. Later I also discovered—or more accurately, read somewhere—that there is a short window during startup where the device must be powered solely by the battery, without any external power support.  
 This effectively creates a narrow timing window in which a real battery must be present and actively supplying the system in order for the boot process to continue.
 
@@ -211,10 +211,10 @@ fastboot getvar battery-current
 fastboot getvar battery-voltage
 ```
 
-Because both batteries include their own BMS, the result is effectively a BMS-to-BMS configuration. While electrically maybe questionable, it works in practice.  
+Because both batteries include their own BMS, the result is effectively a BMS-to-BMS configuration. While it is certainly questionable from an electrical point of view, it works in practice.
 To ensure that charging was properly regulated for the smaller batteries, I monitored the charging currents. I observed peak values of approximately ~250mA for the smaller battery and ~350mA for the larger one.
-This suggests that the external BMS is still correctly limiting and managing the charge current, even in this improvised setup. Under normal conditions, I except the phone’s internal BMS to handle significantly higher currents.  
-I also want to mention, that at one point earlier in the process, I also encountered an issue where the device would not boot unless the battery had been connected for a few minutes beforehand. In hindsight, this was likely caused by the weaker battery, and switching to the larger one appears to have resolved it.
+This suggests that the external BMS is still correctly limiting and managing the charge current, even in this improvised setup. Under normal conditions, I would expect the phone’s internal BMS to handle significantly higher currents.  
+I also want to mention that at one point earlier in the process, I also encountered an issue where the device would not boot unless the battery had been connected for a few minutes beforehand. In hindsight, this was likely caused by the weaker battery, and switching to the larger one appears to have resolved it.
 
 
 ## 7. Goodbye Android
@@ -225,12 +225,12 @@ At that point, recovery would become significantly more difficult—or, more rea
 
 ## 8. Enable OEM Unlock
 
-This step is required to unlock the bootloader, meaning we are able to flash to the phones partitions. Inside the developer options, the “OEM unlocking” toggle must be enabled before any further modification of the system is possible.
+This step is required to unlock the bootloader, meaning to be able to flash to the phones partitions. Inside the developer options, the “OEM unlocking” toggle must be enabled before any further modification of the system is possible.
 
 
 ### Family Link
 
-Because the device is managed via Family Link, this option is greyed out by default in the developer settings. In practice, this makes bootloader unlocking significantly more complicated, since Family Link is not designed to allow partial or device-specific removal in a simple way.
+Because the device was managed via Family Link, this option is greyed out by default in the developer settings. In practice, this makes bootloader unlocking significantly more complicated, since Family Link is not designed to allow partial or device-specific removal in a simple way.
 One theoretical option is to remove parental supervision entirely from the child account. However, this was not a viable path in this case, since I still wanted the protection on other devices without reconfiguring afterwards.   
 As a result, the only practical workaround was to remove the child account directly from the device via the system settings.
 
@@ -251,7 +251,7 @@ The password was entered and confirmed with `Enter`, despite having no visual co
 ## 9. Bootloader Unlock
 
 In addition to deleting all user data, this also resets all debugging-related settings, including USB debugging and trusted ADB authorizations. As a result, any existing access is lost and must be rebuilt afterwards.
-For my specific case, this effectively meant there was no real way back. I do not believe Android provides reliable external monitor support during the initial device setup flow, which implies that the setup process after a wipe, would need to be done blindly—using only USB input without any visual help.
+For my specific case, this effectively meant there was no real way back. I do not believe Android provides reliable external monitor support during the initial device setup flow, which implies that the setup process after a wipe would need to be done blindly—using only USB input without any visual help.
 
 
 ### Bootloader Access
@@ -272,7 +272,7 @@ Once in fastboot mode, the bootloader can be unlocked with:
 fastboot flashing unlock
 ```
 
-After issuing this command, confirmation must be done using the hardware buttons directly on the device, without the screen i figured the combination out with the help of youtube videos:
+After issuing this command, confirmation must be done using the hardware buttons directly on the device, without the screen I figured the combination out with the help of youtube videos:
 
 * Volume Down → select unlock option
 * Power Button → confirm selection
@@ -283,10 +283,10 @@ This final confirmation immediately triggers a full device wipe and completes th
 ## 10. Disable Security Related Features
 
 The initial idea was to create a modified `boot.img`. The plan was relatively simple in theory: take the original kernel and combine it with a custom ramdisk containing a minimal “do nothing” init program.  
-However, this approach quickly turned out to be outdated for modern Android versions. The initramfs is build upon multiple ramdisks, where as the final merged ramdisk is from `init_boot.img`. Meaning even if I add a ramdisk to `boot.img` and it is included in the final initramfs it wont be merged last, so the kernel will still call the `/init` from `init_boot.img`.
+However, this approach quickly turned out to be outdated for modern Android versions. The initramfs is build upon multiple ramdisks that are merged together, where the final merged ramdisk is from `init_boot.img`. Meaning even if I add a ramdisk to `boot.img` and it is included in the final initramfs it wont be merged last, so the kernel will still call the `/init` from `init_boot.img`.
 So this meant the actual target had to shift to modifying `init_boot.img` instead.
 
-At this point of writing, things start to get blur between what is strictly required and what was simply being disabled along the way. In hindsight, it is not entirely clear which steps were strictly necessary and which were just part of progressively disabling security mechanisms to make experimentation possible. Maybe I even forgot something but who knows!?
+At this point of writing, things start to get blurry between what is strictly required and what was simply being disabled along the way. In hindsight, it is not entirely clear which steps were strictly necessary and which were just part of progressively disabling security mechanisms to make experimentation possible. Maybe I even forgot something but who knows!?
 
 
 ### [Kernel / Boot Image Flashing](https://source.android.com/docs/setup/build/building-pixel-kernels#flash-kernel-images)
@@ -297,7 +297,7 @@ The first step came from the kernel flashing process:
 fastboot oem disable-verification
 ```
 This command is documented in the context of flashing custom kernels, and appears to disable certain verification mechanisms in the boot chain.
-In addition, when working with images that involve a lower security patch level, we again need to wipe the device data. Currently I still do not know whether this is enforced at the bootloader level or later in userspace.
+In addition, when working with images that involve a lower security patch level, we again need to wipe the device data.  
 ```bash
 fastboot -w
 ```
@@ -346,7 +346,7 @@ For working with boot images I use:
 ### Extraction
 
 The first step is extracting the ramdisk from `init_boot.img`.  
-Because ramdisks often contain symlinks and special filesystem structures, `bsdtar` is used instead of standard extraction tools to avoid accidentally modifying the host filesystem —been there, done that.
+Because ramdisks often contain symlinks and special filesystem structures, `bsdtar` is used instead of standard extraction tools to avoid accidentally modifying the host filesystem—been there, done that.
 
 ```bash
 magiskboot unpack init_boot.img
@@ -364,11 +364,12 @@ sudo bash -c 'find . | cpio -H newc -o > ../ramdisk_new.cpio'
 ```
 
 The resulting archive is then compressed:
-
 ```bash
 lz4 -l ../ramdisk_new.cpio ../ramdisk_new.cpio
 cd ..
 ```
+While Android generally supports multiple ramdisk compression formats such as gzip or even uncompressed archives, the important detail here is that LZ4 must be used in legacy mode.
+Without the -l flag, the image may not be recognized or properly handled by the boot process, depending on the device and bootloader expectations.
 
 Finally, a new `init_boot.img` is created using `mkbootimg`.
 The original `os_version` and `os_patch_level` values are preserved and extracted from the stock image using `magiskboot`, since these values are part of the [boot header](https://source.android.com/docs/core/architecture/bootloader/boot-image-header) validation:
@@ -397,7 +398,7 @@ After flashing the modified image, the device appeared to proceed the normal boo
 Google Inc. Nexus/Pixel Device (charging + debug)
 ```
 
-Even without adb access anymore —my PC is no longer authorized—, the system clearly progressed beyond early boot stages.
+Even without adb access anymore—my PC is no longer authorized—, the system clearly progressed beyond early boot stages.
 
 From this behavior, I concluded that the modified `init_boot.img` was accepted by the device, and that the verification chain (vbmeta / AVB enforcement) was effectively bypassed or disabled at this point.
 
@@ -440,7 +441,7 @@ A third variant introduces a controlled delay before rebooting:
 
 #### Behavior
 
-- Reboots into fastboot after approximately $~(76 + 3x)$ or $~(32 + x)$ seconds
+- Reboots into fastboot after approximately $\~(76 + 3x)$ or $\~(32 + x)$ seconds
 
 
 ### retry-count
@@ -464,14 +465,14 @@ and observing the time between disconnect and reappearance in fastboot mode on t
 
 A simplified model for the observed behavior is:
 
-$total\_time = 20s \cdot reset\_counter + x + 10s$
+$total\\_time = 20s \cdot reset\\_counter + x + 10s$
 
 
 ### Time hypothesis
 
-According to the [Android Boot Flow documentation](https://source.android.com/docs/security/features/verifiedboot/boot-flow), there is a visible warning screen after unlocking the device, typically lasting around 10 seconds, indicating that the device is in an orange state. As in my case, this screen appears to only be shown once rather than per reset cycle —indicated by the static $+ 10s$.  
-The additional ~20 seconds observed per `retry-count` is quite confusing. A red `eio` state would normally indicate a dm-verity error on the system partition, which does not apply here since system partitions were not modified. 
-At this stage, I could only speculate  and would require deeper investigation—ideally with proper logging or a working display on the device. For now, it is one of those details that remains accepted as part of the system’s black-box behavior.
+According to the [Android Boot Flow documentation](https://source.android.com/docs/security/features/verifiedboot/boot-flow), there is a visible warning screen after unlocking the device, typically lasting around 10 seconds, indicating that the device is in a so called orange state. As in my case, this screen appears to only be shown once rather than per reset cycle —indicated by the static $+ 10s$.  
+The additional ~20 seconds observed per `retry-count` were quite confusing. A red `eio` state would normally indicate a dm-verity error on the system partition, which does not apply here since system partitions were not modified. 
+At this stage, I could only speculate and would require deeper investigation—ideally with proper logging or a working display on the device. For now, it is one of those details that remains accepted as part of the system’s black-box behavior.
 
 
 ## 13. Sleep-Debugging
@@ -479,7 +480,7 @@ At this stage, I could only speculate  and would require deeper investigation—
 The next goal was to build a minimal custom `/init` program. Ideally, this would allow sending debug output back to a host PC over USB, effectively giving visibility into the very first userspace process of the system.  
 The work for this involved setting up the most basic runtime environment: mounting essential virtual filesystems, creating device nodes, and loading a minimal set of kernel modules.
 
-The fundamental issue was that there was no feedback channel at all. In theory, I could have enabled serial output from fastboot and built a USB-C debugging adapter, since the device is capable of exposing a serial interface for kernel logggin—at least this is something that earlier Pixel devices were known to support. However, I deliberately avoided that route because it would have required additional hardware that I did not want to purchase or build just for debugging this stage.  
+The fundamental issue was that there was no feedback channel at all. In theory, I could have enabled serial output from fastboot and built a USB-C debugging adapter, since the device is capable of exposing a serial interface for kernel logging—at least this is something that earlier Pixel devices were known to support. However, I deliberately avoided that route because it would have required additional hardware that I did not want to purchase or build just for debugging this stage. In hindsight, I would not recommend anyone to do it that way, but I was determined to achieve it without any extra hardware.  
 So, back to the problem: since `/init` runs as PID 1, any failure during execution results in either a silent crash or a reboot, with no logs and no visible output. In practice, this meant that any mistake in the early init logic was completely invisible.
 
 ### Sleep-Debugging
@@ -488,7 +489,7 @@ To work around the lack of observability, I introduced what can only be describe
 
 The idea is simple: instead of printing debug output, the program encodes feedback through sleep timing—yes, it is exactly as stupid as it sounds.
 
-A simple example looked like this:
+A simple example looks like this:
 
 ```cpp
 int main(int argc, char** argv) {
@@ -583,20 +584,19 @@ dup2(fd, STDOUT_FILENO);
 dup2(fd, STDERR_FILENO);
 execl("/bin/sh", "sh", NULL);
 ```
-
 This attaches a shell to the USB gadget serial interface, turning the phone into a headless system that can be interacted with directly from the host machine.
 
 This is only possible because `vendor_boot.img` (which effectively acts as a recovery ramdisk on modern Android devices) is automatically merged into the initramfs. 
 It already contains a minimal userspace, including basic utilities like `/bin/sh`, which can be reused without having to build a full environment from scratch.
 
-### Notes
-
-* The shell may complain if `/dev/tty` does not exist
-* It may also warn about controlling terminal handling depending on how the device is opened
-* In particular, opening `/dev/ttyGS0` without `O_NOCTTY` can trigger warnings
-* Right after connecting, a few characters may be sent to the device. I think it is the `ModemManager's` fault, but I still need to test it, while it is disabled.
-
-Despite these quirks, the setup works reliably enough to provide a fully interactive shell over USB.
+>[!NOTE]
+>
+> * The shell may complain if `/dev/tty` does not exist
+> * It may also warn about controlling terminal handling depending on how the device is opened
+> * In particular, opening `/dev/ttyGS0` without `O_NOCTTY` can trigger warnings
+> * Right after connecting, a few characters may be sent to the device. I think it is the `ModemManager's` fault, but I still need to test it, while it is disabled.
+> 
+> Despite these quirks, the setup works reliably enough to provide a fully interactive shell over USB.
 
 This marks a major point in the process.  
 Instead of relying on indirect timing-based debugging, it is now possible to directly interact with the system in early userspace—effectively turning the device into a controllable headless Linux environment.
@@ -711,7 +711,7 @@ At this point, however, the path forward is clear: use `userdata` as the foundat
 
 At this point, interacting with the device through the serial shell already worked, but transferring larger amounts of data—or setting up a full Linux root filesystem—would still be unnecessarily complicated by flashing a finished rootfs via fastboot to the userdata partition.
 
-So instead of pushing whole images through limited interface, lets expose the `userdata` partition directly to the host PC as a USB mass storage device.
+So instead of pushing whole images through a limited interface, I expose the `userdata` partition directly to the host PC as a USB mass storage device.
 
 By booting into recovery mode:
 ```bash
@@ -759,14 +759,14 @@ The general approach is:
 
 The following tools are required on the host system:
 
-- `debootstrap`  
-- `qemu-user-static`  
+- `debootstrap` is used to create a minimal Debian filesystem (root filesystem) from scratch.
+- `qemu-user-static` allows executing ARM (or other architecture) binaries inside that Debian rootfs on an x86-64 host using user-mode emulation.
 <!-- - `cpio`   -->
 
 
 ### Installation
 
-First, a filesystem is created on the exposed partition:
+First, a filesystem is created on the exposed partition. The following steps form a step-by-step guide to reproduce the setup:
 
 ```bash
 # Create filesystem
@@ -789,13 +789,13 @@ Next, the first stage of `debootstrap` is executed:
 sudo debootstrap --arch=arm64 --variant=minbase --foreign trixie ./ http://deb.debian.org/debian
 ```
 
-Since my host system is x86_64, `qemu-aarch64-static` is required to execute ARM64 binaries during the second stage:
+Since the host system is x86_64, `qemu-aarch64-static` is required to execute ARM64 binaries during the second stage. Once the initial Debian filesystem is on the device, `qemu-aarch64-static` must be copied into it so the host system can find it and execute ARM binaries:
 
 ```bash
 sudo cp /usr/bin/qemu-aarch64-static ./usr/bin/
 ```
 
-To properly complete the installation, required system directories are bind-mounted:
+To properly complete the installation, required system directories are bind-mounted from the host system into the target filesystem (chroot environment) to provide access to essential kernel and device interfaces. This is required so that system tools inside the virtual root environment can interact with devices, processes, and system information as if they were running on a fully booted system:
 
 ```bash
 sudo mount --bind /dev ./dev
@@ -851,6 +851,7 @@ The objective was to:
 - Switch the system root to Debian using `chroot`
 - Continue execution inside the new userspace environment
 
+More or less, this reflects how a modern Linux boot process works, where the kernel starts with a temporary root filesystem, mounts essential virtual filesystems, and then transitions into the real userspace environment.
 
 ### Implementation
 
@@ -927,6 +928,7 @@ This would be the cleanest solution, since it aligns the system with standard Li
 A fallback approach, especially for devices where the kernel is not easily modified or where rebuilding the kernel is not desirable, is to use `mdev` before handing control over to `systemd`.  
 In this setup, `/dev` is populated manually based on the device nodes already exposed via `/sys`. While this does not provide the full dynamic behavior of `devtmpfs + udev`, it is sufficient to construct a minimal and consistent device tree that allows the system to continue booting into a functional userspace.  
 This approach effectively acts as a transitional layer between Android’s device handling and a fully dynamic Linux userspace managed by Debian and `systemd`.
+However, this approach does not support hotplugging, meaning newly connected devices (such as USB peripherals) will not be detected or created dynamically after boot, so they will not be recognized by the system if plugged in later.
 
 ---
 
