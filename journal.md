@@ -4,29 +4,34 @@
 > This is not a guide. It is the documentation of my journey converting a broken Pixel 9 into a headless Linux server.  
 > A proper guide will likely follow once everything is fully stable and reproducible.
 
-<details>
-<summary>## Table of Contents</summary>
-- [0. Hardware State](#0-hardware-state)
-- [1. Initial Access (UI Control)](#1-initial-access-ui-control)
-- [2. Enable Debugging](#2-enable-debugging)
-- [3. Granting ADB Access](#3-granting-adb-access)
-- [4. Check Functionality](#4-check-functionality)
-- [5. Removing the broken Screen](#5-removing-the-broken-screen)
-- [6. Debug Battery "Replacement"](#6-debug-battery-replacement)
-- [7. Goodbye Android](#7-goodbye-android)
-- [8. Enable OEM-Unlock](#8-enable-oem-unlock)
-- [9. Bootloader Unlock](#9-bootloader-unlock)
+<details>  
+  
+<summary>Table of Contents</summary>  
+  
+## Table of Contents  
+
+- [0. Hardware State](#0-hardware-state)  
+- [1. Initial Access (UI Control)](#1-initial-access-ui-control)  
+- [2. Enable Debugging](#2-enable-debugging)  
+- [3. Granting ADB Access](#3-granting-adb-access)  
+- [4. Check Functionality](#4-check-functionality)  
+- [5. Removing the broken Screen](#5-removing-the-broken-screen)  
+- [6. Debug Battery "Replacement"](#6-debug-battery-replacement)  
+- [7. Goodbye Android](#7-goodbye-android)  
+- [8. Enable OEM-Unlock](#8-enable-oem-unlock)  
+- [9. Bootloader Unlock](#9-bootloader-unlock)  
 - [10. Disable Security Related Features](#10-disable-security-related-features)
-- [11. Change init_boot.img Signature](#11-change-init_bootimg-signature)
-- [12. Init Debugging](#12-init-debugging)
-- [13. Sleep-Debugging](#13-sleep-debugging)
-- [14. USB Gadget (Serial Console)](#14-usb-gadget-serial-console)
-- [15. InitRAMFS Shell](#15-initramfs-shell)
-- [16. Storage Layout Discovery](#16-storage-layout-discovery)
-- [17. Recovery Mode | Mass Storage](#17-recovery-mode--mass-storage)
-- [18. Debian RootFS](#18-debian-rootfs)
-- [19. Mount + Chroot RootFS](#19-mount--chroot-rootfs)
-- [Future Work](#future-work)
+- [11. Modify Image Signature](#11-modify-image-signature)  
+- [12. Init Debugging](#12-init-debugging)  
+- [13. Sleep-Debugging](#13-sleep-debugging)  
+- [14. USB Gadget (Serial Console)](#14-usb-gadget-serial-console)  
+- [15. InitRAMFS Shell](#15-initramfs-shell)  
+- [16. Storage Layout Discovery](#16-storage-layout-discovery)  
+- [17. Recovery Mode | Mass Storage](#17-recovery-mode--mass-storage)  
+- [18. Debian RootFS](#18-debian-rootfs)  
+- [19. Mount + Chroot RootFS](#19-mount--chroot-rootfs)  
+- [Future Work](#future-work)  
+
 </details>
 
 ## Situation
@@ -332,7 +337,7 @@ fastboot --disable-verity --disable-verification flash vbmeta vbmeta.img
 This achieves a similar effect, but keeps the original metadata structure while instructing the bootloader to skip certain integrity checks during boot.
 
 
-## 11. Modify `init_boot.img`
+## 11. Modify Image Signature
 
 The idea was to validate that the verification chain (specifically AVB / vbmeta) was actually disabled and that modified boot components would still be accepted by the device.  
 A simple way to test this was to make a minimal, non-functional modification to the `init_boot.img`—for example by changing its signature or otherwise altering its structure without touching the meaningful runtime content.
