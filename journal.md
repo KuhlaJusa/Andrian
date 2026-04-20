@@ -46,8 +46,8 @@ On top of the physical damage, the device was also enrolled in Family Link, whic
 
 The screen is completely unusable. There is no touch input and no visible image output. The front glass is severely damaged, as shown below:
 
-![shattered_screen](./res/img/shattered_screen.jpg)
-![shattered_screen](./res/img/broken_screen.jpg)
+<img src="./res/img/shattered_screen.jpg" width=50% height=50%>
+<img src="./res/img/broken_screen.jpg" width=50% height=50%>
 
 The rear glass, however, is still intact, which is honestly surprising given the condition of the front. The device itself still appears to operate normally. A short press of the power button turned the display on and off, which strongly suggested that the phone was sitting in the normal lock screen state rather than being fully unresponsive.  
 A long press on the power button triggered a brief vibration, which likely indicated that the system was still responsive enough to bring up either the power menu or a voice assistant like Gemini. Even without a usable display, this small interaction was enough to confirm that the underlying system seemed to be still running and reacting normally to input.
@@ -165,8 +165,10 @@ In practice, this meant the screen had to come off regardless of the final outco
 If the internal inspection would not reveal any additional damage, this would allow for a relatively simple repair—replacing only the screen without having to remove the rear glass. Avoiding work on the backside was preferable, as it would introduce the risk of damaging components that were still in good condition —like the actuall back glass itself.
 At the same time, removing the screen provided the a good starting point to check for any hidden structural or internal damage that was not visible from the outside.
 
-Unfortunately, this quickly revealed that the internal metal frame was not in perfect condition either. It showed visible deformation in a few spots, concentrated on the lower right side:
-![frame_dent](./res/img/frame_dent.jpg)
+Unfortunately, this quickly revealed that the internal metal frame was not in perfect condition either. It showed visible deformation in a few spots, concentrated on the lower right side:  
+
+<img src="./res/img/frame_dent.jpg" width=50% height=50%>  
+
 The more concerning part was that directly behind that area sits the battery. Seeing the frame bent in that region immediately raised concerns about how much force had been transferred into the battery during the impact.
 
 
@@ -207,7 +209,7 @@ This way, the phone still sees a valid battery interface, while the energy sourc
 A small 250mAh battery turned out to be insufficient. The load during boot caused a significant voltage drop, making it unable to reliably sustain the device through startup.
 Eventually, I found a spare 850mAh battery from an action camera, which proved much more stable under load. This led to this frankenstein setup:
 
-![debug_battery_replacement](./res/img/debug_battery_replacement.jpg)
+<img src="./res/img/debug_battery_replacement.jpg" width=50% height=50%>
 
 Inside the bootloader, it is also possible to read battery-related telemetry, such as current and voltage:
 
