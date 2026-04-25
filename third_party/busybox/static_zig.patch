@@ -1,0 +1,47 @@
+diff -Naur upstream/scripts/kconfig/lxdialog/check-lxdialog.sh changed/scripts/kconfig/lxdialog/check-lxdialog.sh
+--- upstream/scripts/kconfig/lxdialog/check-lxdialog.sh	2021-01-01 11:52:27.000000000 +0100
++++ changed/scripts/kconfig/lxdialog/check-lxdialog.sh	2026-04-25 19:49:19.671243674 +0200
+@@ -47,7 +47,7 @@
+ check() {
+         $cc -x c - -o $tmp 2>/dev/null <<'EOF'
+ #include CURSES_LOC
+-main() {}
++int main() {}
+ EOF
+ 	if [ $? != 0 ]; then
+ 	    echo " *** Unable to find the ncurses libraries or the"       1>&2
+diff -Naur upstream/scripts/trylink changed/scripts/trylink
+--- upstream/scripts/trylink	2021-03-01 17:38:12.000000000 +0100
++++ changed/scripts/trylink	2026-04-25 19:50:33.649633580 +0200
+@@ -87,7 +87,7 @@
+ CONFIG_EXTRA_LDLIBS="$8"
+ 
+ # The --sort-section option is not supported by older versions of ld
+-SORT_SECTION="-Wl,--sort-section,alignment"
++SORT_SECTION=""
+ if ! check_cc "-Wl,--sort-section,alignment"; then
+     echo "Your linker does not support --sort-section,alignment"
+     SORT_SECTION=""
+@@ -96,11 +96,11 @@
+ START_GROUP="-Wl,--start-group"
+ END_GROUP="-Wl,--end-group"
+ INFO_OPTS() {
+-	echo "-Wl,--warn-common -Wl,-Map,$EXE.map -Wl,--verbose"
++	echo ""
+ }
+ 
+ # gold may not support --sort-common (yet)
+-SORT_COMMON="-Wl,--sort-common"
++SORT_COMMON=""
+ if ! check_cc "-Wl,--sort-common"; then
+     echo "Your linker does not support --sort-common"
+     SORT_COMMON=""
+@@ -111,7 +111,7 @@
+ # See sources.redhat.com/bugzilla/show_bug.cgi?id=3400
+ # Note that glibc is unsuitable for static linking anyway.
+ # We are removing -Wl,--gc-sections from link command line.
+-GC_SECTIONS="-Wl,--gc-sections"
++GC_SECTIONS=""
+ if (. ./.config && test x"$CONFIG_STATIC" = x"y") then
+     if check_libc_is_glibc; then
+ 	echo "Static linking against glibc, can't use --gc-sections"
